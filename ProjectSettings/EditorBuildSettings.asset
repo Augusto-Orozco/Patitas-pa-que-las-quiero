@@ -17,4 +17,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Loose.unity
     guid: 81c0f633d1989904188f962f1725e5d5
+  - enabled: 1
+    path: Assets/Scenes/Battle.unity
+    guid: e2c64ea4962eeba49ac90829c8e6c7d5
+  - enabled: 1
+    path: Assets/Scenes/WinCrown.unity
+    guid: 6737c56666c5c454ea3a2474f7a2c1c2
   m_configObjects: {}

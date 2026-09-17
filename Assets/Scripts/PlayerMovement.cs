@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -9,6 +11,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float fastFallSpeed = 4f;
     [SerializeField] private float landingDuration = 0.25f;
     [SerializeField] private string groundTag = "Ground";
+    [SerializeField] private int maxHealth = 3;
+    [SerializeField] private Image healthBar;
+    [SerializeField] private string deathScene = "Loose";
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Animator animator;
 
@@ -22,6 +27,7 @@ public class PlayerMovement : MonoBehaviour
     private bool isLanding;
     private bool isDoubleJumping;
     private bool isDead;
+    private int currentHealth;
     private float landingTimer;
     private readonly HashSet<Collider2D> groundContacts = new HashSet<Collider2D>();
 
@@ -29,6 +35,9 @@ public class PlayerMovement : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<Collider2D>();
+        maxHealth = Mathf.Max(1, maxHealth);
+        currentHealth = maxHealth;
+        UpdateHealthBar();
 
         if (spriteRenderer == null)
         {
@@ -210,6 +219,7 @@ public class PlayerMovement : MonoBehaviour
     public void ResetAfterSceneLoad()
     {
         isDead = false;
+        currentHealth = maxHealth;
         horizontalInput = 0f;
         jumpRequested = false;
         isGrounded = false;
@@ -225,7 +235,40 @@ public class PlayerMovement : MonoBehaviour
         body.simulated = true;
         body.position = transform.position;
         SetVisualsActive(true);
+        UpdateHealthBar();
         UpdateAnimation();
+    }
+
+    public void ConnectHealthBarFromScene()
+    {
+        healthBar = FindHealthBar();
+        UpdateHealthBar();
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (isDead || damage <= 0)
+        {
+            return;
+        }
+
+        currentHealth = Mathf.Max(0, currentHealth - damage);
+        UpdateHealthBar();
+
+        if (currentHealth > 0)
+        {
+            return;
+        }
+
+        if (!Application.CanStreamedLevelBeLoaded(deathScene))
+        {
+            Debug.LogError($"La escena de muerte '{deathScene}' no esta incluida en File > Build Settings > Scenes In Build.");
+            return;
+        }
+
+        PrepareForDeath();
+        SceneAudioController.StopMusicAfterDeath();
+        SceneManager.LoadScene(deathScene);
     }
 
     public void PrepareForDeath()
@@ -247,5 +290,68 @@ public class PlayerMovement : MonoBehaviour
         {
             renderer.enabled = isActive;
         }
+    }
+
+    private void UpdateHealthBar()
+    {
+        if (healthBar != null)
+        {
+            healthBar.fillAmount = (float)currentHealth / maxHealth;
+        }
+    }
+
+    private Image FindHealthBar()
+    {
+        Image fallback = null;
+        Image panelFill = null;
+        Image[] images = FindObjectsOfType<Image>(true);
+
+        foreach (Image image in images)
+        {
+            string objectName = image.gameObject.name;
+
+            if (image.type == Image.Type.Filled &&
+                IsNamed(objectName, "vida") && IsHealthBarChild(image.transform))
+            {
+                return image;
+            }
+
+            if (image.type == Image.Type.Filled && IsHealthBarChild(image.transform))
+            {
+                panelFill = image;
+            }
+
+            if (fallback == null && image.type == Image.Type.Filled)
+            {
+                fallback = image;
+            }
+        }
+
+        return panelFill != null ? panelFill : fallback;
+    }
+
+    private bool IsHealthBarChild(Transform imageTransform)
+    {
+        Transform current = imageTransform;
+
+        while (current != null)
+        {
+            string objectName = current.gameObject.name;
+
+            if (IsNamed(objectName, "HealthBar") || IsNamed(objectName, "BarraVida") ||
+                IsNamed(objectName, "FondoVida"))
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    private bool IsNamed(string objectName, string expectedName)
+    {
+        return string.Equals(objectName, expectedName, System.StringComparison.OrdinalIgnoreCase);
     }
 }

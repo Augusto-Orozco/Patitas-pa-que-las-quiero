@@ -3,6 +3,9 @@ using UnityEngine.SceneManagement;
 
 public class SceneNavigation : MonoBehaviour
 {
+    private static bool battleDefeat;
+
+    [SerializeField] private GameObject restartButton;
     [SerializeField] private string runningScene = "Running";
     [SerializeField] private string preparationScene = "Preparacion";
     [SerializeField] private string startScene = "Inicio";
@@ -10,6 +13,21 @@ public class SceneNavigation : MonoBehaviour
     [SerializeField] private string spawnPointTag = "SpawnPoint";
 
     private bool sceneLoading;
+
+    private void Awake()
+    {
+        if (battleDefeat && restartButton != null)
+        {
+            restartButton.SetActive(false);
+        }
+
+        battleDefeat = false;
+    }
+
+    public static void MarkBattleDefeat()
+    {
+        battleDefeat = true;
+    }
 
     public void RestartRunning()
     {

@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 public class NextScene : MonoBehaviour
 {
     [SerializeField] private string sceneToLoad;
+    [SerializeField] private string playerTag = "Player";
     [SerializeField] private bool useSpawnPoint = true;
     [SerializeField] private string spawnPointTag = "SpawnPoint";
 
@@ -11,6 +12,14 @@ public class NextScene : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        bool isPlayer = other != null &&
+            (other.CompareTag(playerTag) || other.GetComponentInParent<PlayerMovement>() != null);
+
+        if (!isPlayer)
+        {
+            return;
+        }
+
         LoadSelectedScene();
     }
 

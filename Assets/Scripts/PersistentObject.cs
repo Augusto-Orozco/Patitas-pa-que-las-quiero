@@ -96,6 +96,7 @@ public class PersistentObject : MonoBehaviour
         }
 
         player.transform.root.gameObject.SetActive(true);
+        player.ConnectHealthBarFromScene();
 
         if (scene.name == "Inicio")
         {

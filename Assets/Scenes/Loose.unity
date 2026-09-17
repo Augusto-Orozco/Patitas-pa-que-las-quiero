@@ -677,6 +677,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66b7583680b26964d8378d9ffd1e0cab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  restartButton: {fileID: 176563235}
   runningScene: Running
   preparationScene: Preparacion
   startScene: Inicio
