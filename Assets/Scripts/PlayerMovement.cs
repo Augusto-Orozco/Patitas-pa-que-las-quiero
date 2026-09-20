@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -16,9 +17,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private string deathScene = "Loose";
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Animator animator;
+    [SerializeField] private GameObject shieldPanel;
+    [SerializeField] private TMP_Text shieldTimerText;
 
     private Rigidbody2D body;
     private Collider2D playerCollider;
+    private float shieldRemaining;
     private float horizontalInput;
     private bool jumpRequested;
     private int jumpsUsed;
@@ -48,6 +52,13 @@ public class PlayerMovement : MonoBehaviour
         {
             animator = GetComponentInChildren<Animator>();
         }
+
+        if (shieldPanel == null || shieldTimerText == null)
+        {
+            FindShieldPanel();
+        }
+
+        SetShieldPanelVisible(false);
     }
 
     private void Update()
@@ -58,6 +69,15 @@ public class PlayerMovement : MonoBehaviour
             UpdateAnimation();
             return;
         }
+
+        shieldRemaining = Mathf.Max(0f, shieldRemaining - Time.deltaTime);
+
+        if (shieldPanel == null || shieldTimerText == null)
+        {
+            FindShieldPanel();
+        }
+
+        UpdateShieldPanel();
 
         horizontalInput = Input.GetAxisRaw("Horizontal");
 
@@ -228,6 +248,8 @@ public class PlayerMovement : MonoBehaviour
         landingTimer = 0f;
         jumpsUsed = 0;
         isDoubleJumping = false;
+        shieldRemaining = 0f;
+        SetShieldPanelVisible(false);
         groundContacts.Clear();
 
         body.velocity = Vector2.zero;
@@ -247,7 +269,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isDead || damage <= 0)
+        if (isDead || damage <= 0 || shieldRemaining > 0f)
         {
             return;
         }
@@ -269,6 +291,67 @@ public class PlayerMovement : MonoBehaviour
         PrepareForDeath();
         SceneAudioController.StopMusicAfterDeath();
         SceneManager.LoadScene(deathScene);
+    }
+
+    public void ActivateShield(float duration)
+    {
+        shieldRemaining = Mathf.Max(shieldRemaining, duration);
+        SetShieldPanelVisible(true);
+        UpdateShieldPanel();
+    }
+
+    private void FindShieldPanel()
+    {
+        Canvas[] canvases = FindObjectsOfType<Canvas>(true);
+
+        foreach (Canvas canvas in canvases)
+        {
+            Transform[] children = canvas.GetComponentsInChildren<Transform>(true);
+
+            foreach (Transform child in children)
+            {
+                if (child.name != "Bendicion")
+                {
+                    continue;
+                }
+
+                TMP_Text text = child.GetComponentInChildren<TMP_Text>(true);
+
+                if (text == null)
+                {
+                    continue;
+                }
+
+                shieldPanel = child.gameObject;
+                shieldTimerText = text;
+                return;
+            }
+        }
+
+    }
+
+    private void UpdateShieldPanel()
+    {
+        if (shieldRemaining <= 0f)
+        {
+            SetShieldPanelVisible(false);
+            return;
+        }
+
+        SetShieldPanelVisible(true);
+
+        if (shieldTimerText != null)
+        {
+            shieldTimerText.text = $"{shieldRemaining:0.0}s";
+        }
+    }
+
+    private void SetShieldPanelVisible(bool isVisible)
+    {
+        if (shieldPanel != null)
+        {
+            shieldPanel.SetActive(isVisible);
+        }
     }
 
     public void PrepareForDeath()
