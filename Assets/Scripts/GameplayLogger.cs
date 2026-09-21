@@ -9,6 +9,15 @@ public class GameplayLogger : MonoBehaviour
     public int damageReceived = 0;
     public int damageBlocked = 0;
 
+    private int challengeRating;
+    private int errorResponsibilityRating;
+    private int masteryRating;
+    private int shieldImpactRating;
+    private string hardestPart = "";
+    private bool surveyCompleted;
+    private bool exportInProgress;
+    private bool hasExported;
+
     private float sessionTime;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -55,8 +64,30 @@ public class GameplayLogger : MonoBehaviour
         damageBlocked++;
     }
 
+    public void SetSurveyResponses(
+        int challenge,
+        int errorResponsibility,
+        int mastery,
+        int shieldImpact,
+        string hardestLevelPart)
+    {
+        challengeRating = Mathf.Clamp(challenge, 1, 5);
+        errorResponsibilityRating = Mathf.Clamp(errorResponsibility, 1, 5);
+        masteryRating = Mathf.Clamp(mastery, 1, 5);
+        shieldImpactRating = Mathf.Clamp(shieldImpact, 1, 5);
+        hardestPart = hardestLevelPart ?? "";
+        surveyCompleted = true;
+    }
+
     public void ExportCSV()
     {
+        if (exportInProgress || hasExported)
+        {
+            return;
+        }
+
+        exportInProgress = true;
+
         string logsFolder = Path.Combine(Application.dataPath, "Logs");
         Directory.CreateDirectory(logsFolder);
 
@@ -65,32 +96,73 @@ public class GameplayLogger : MonoBehaviour
             "dyn_log.csv"
         );
 
-        // Crear encabezados si el archivo todavía no existe
-        if (!File.Exists(path))
+        try
         {
-            File.WriteAllText(
-                path,
-                "TiempoSegundos,Saltos,DanioRecibido,DanioBloqueado\n"
+            // Crear encabezados si el archivo todavía no existe
+            if (!File.Exists(path))
+            {
+                File.WriteAllText(
+                    path,
+                    "TiempoSegundos,Saltos,DanioRecibido,DanioBloqueado," +
+                    "\"Que tan desafiante te parecio el juego?\"," +
+                    "\"Sentiste que los errores fueron causados por tus decisiones?\"," +
+                    "\"Sentiste que mejorabas mientras avanzabas?\"," +
+                    "\"El escudo fue util?\"," +
+                    "\"Comentarios para el desarrollador\"\n"
+                );
+            }
+
+            // Agregar los datos de esta sesión y cerrar el archivo inmediatamente.
+            string data =
+                sessionTime.ToString("F2") + "," +
+                jumps + "," +
+                damageReceived + "," +
+                damageBlocked + "," +
+                challengeRating + "," +
+                errorResponsibilityRating + "," +
+                masteryRating + "," +
+                shieldImpactRating + "," +
+                EscapeCsv(hardestPart) + "\n";
+
+            using (StreamWriter writer = new StreamWriter(path, true))
+            {
+                writer.Write(data);
+            }
+
+            hasExported = true;
+
+            Debug.Log(
+                "Resultados de la sesión:\n" +
+                "Tiempo: " + sessionTime.ToString("F2") + " segundos\n" +
+                "Saltos: " + jumps + "\n" +
+                "Daño recibido: " + damageReceived + "\n" +
+                "Daño bloqueado: " + damageBlocked + "\n" +
+                "Encuesta completada: " + (surveyCompleted ? "Sí" : "No") + "\n" +
+                "Datos exportados a: " + path
             );
         }
+        catch (IOException exception)
+        {
+            Debug.LogError(
+                "No se pudo escribir el CSV porque está siendo usado por otro programa. " +
+                "Cierra Excel u otro editor y vuelve a ejecutar la partida. Detalle: " +
+                exception.Message
+            );
+        }
+        finally
+        {
+            exportInProgress = false;
+        }
+    }
 
-        // Agregar los datos de esta sesión
-        string data =
-            sessionTime.ToString("F2") + "," +
-            jumps + "," +
-            damageReceived + "," +
-            damageBlocked + "\n";
+    private static string EscapeCsv(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "";
+        }
 
-        File.AppendAllText(path, data);
-
-        Debug.Log(
-            "Resultados de la sesión:\n" +
-            "Tiempo: " + sessionTime.ToString("F2") + " segundos\n" +
-            "Saltos: " + jumps + "\n" +
-            "Daño recibido: " + damageReceived + "\n" +
-            "Daño bloqueado: " + damageBlocked + "\n" +
-            "Datos exportados a: " + path
-        );
+        return "\"" + value.Replace("\"", "\"\"") + "\"";
     }
 
     private void OnApplicationQuit()

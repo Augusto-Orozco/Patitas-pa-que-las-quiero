@@ -1,7 +1,6 @@
-TiempoSegundos,Saltos,DanioRecibido,DanioBloqueado
-88.61,0,0,0
-55.72,45,3,0
-84.47,68,2,1
-43.63,32,0,0
-32.35,19,1,1
-89.96,66,2,1
+TiempoSegundos,Saltos,DanioRecibido,DanioBloqueado,"Que tan desafiante te parecio el juego?","Sentiste que los errores fueron causados por tus decisiones?","Sentiste que mejorabas mientras avanzabas?","El escudo fue util?","Comentarios para el desarrollador"
+24.77,9,0,0,0,0,0,0,
+16.85,2,0,0,0,0,0,0,
+187.95,122,7,2,5,4,4,5,"El juego es divertido"
+58.83,0,0,0,4,4,4,5,"Divertido"
+118.39,66,1,0,4,4,4,5,"Añade mas animaciones al escudo"
