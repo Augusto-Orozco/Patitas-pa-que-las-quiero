@@ -127,6 +127,7 @@ public class PlayerMovement : MonoBehaviour
             hasBeenAirborne = true;
             jumpsUsed++;
             isDoubleJumping = jumpsUsed == 2;
+            GameplayLogger.Instance?.LogJump();
         }
 
         if (!isGrounded && Input.GetKey(KeyCode.S))
@@ -269,10 +270,18 @@ public class PlayerMovement : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isDead || damage <= 0 || shieldRemaining > 0f)
+        if (isDead || damage <= 0)
         {
             return;
         }
+
+        if (shieldRemaining > 0f)
+        {
+            GameplayLogger.Instance?.LogBlockedDamage();
+            return;
+        }
+
+        GameplayLogger.Instance?.LogDamage();
 
         currentHealth = Mathf.Max(0, currentHealth - damage);
         UpdateHealthBar();
